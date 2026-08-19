@@ -18,6 +18,10 @@ class EstimateDistanceTests(unittest.TestCase):
     def test_none_rssi_returns_none(self):
         self.assertIsNone(estimate_distance(None))
 
+    def test_boolean_rssi_is_rejected(self):
+        with self.assertRaises(TypeError):
+            estimate_distance(True)
+
     def test_invalid_path_loss_exponent_is_rejected(self):
         with self.assertRaises(ValueError):
             estimate_distance(-70, path_loss_exponent=0)
@@ -33,6 +37,18 @@ class ClassificationTests(unittest.TestCase):
 
     def test_far_at_threshold(self):
         self.assertEqual(classify_distance(5.0, threshold_meters=5.0), "far")
+
+    def test_non_positive_threshold_is_rejected(self):
+        with self.assertRaises(ValueError):
+            classify_distance(1.0, threshold_meters=0)
+
+    def test_negative_distance_is_rejected(self):
+        with self.assertRaises(ValueError):
+            classify_distance(-0.1)
+
+    def test_non_finite_distance_is_rejected(self):
+        with self.assertRaises(ValueError):
+            classify_distance(math.nan)
 
     def test_build_sample_normalizes_observation(self):
         sample = build_sample(-59, threshold_meters=5.0)
