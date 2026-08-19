@@ -51,7 +51,7 @@ The repository contains two proof-of-concept paths built around the same proximi
 - Android notification flow for out-of-range events.
 - Firebase Realtime Database integration for publishing proximity state.
 - Environment-driven configuration for BLE target, Firebase settings, threshold, and scan interval.
-- Deterministic unit tests for the pure proximity model.
+- Deterministic unit tests for both the pure proximity model and BLE/Firebase bridge orchestration.
 - GitHub Actions compatibility checks across Python 3.10, 3.11, and 3.12.
 
 ---
@@ -63,7 +63,7 @@ TheLost/
 ├── app/                      # Android application (Java / Gradle)
 ├── proximity.py              # Pure RSSI -> distance / status logic
 ├── talkWithMicro.py          # Python BLE + Firebase bridge
-├── tests/                    # Unit tests for proximity logic
+├── tests/                    # Proximity + mocked bridge tests
 ├── requirements.txt          # Python runtime dependencies
 └── README.md
 ```
@@ -166,14 +166,17 @@ This is useful for **coarse proximity classification**, not precise physical ran
 python -m unittest discover -s tests -v
 ```
 
-The tests cover:
+The deterministic suite covers:
 
-- expected distance at the calibrated 1-meter RSSI value;
-- monotonic distance behavior as RSSI weakens;
-- invalid RSSI handling;
-- `close` / `far` threshold classification.
+- expected distance at the calibrated 1-meter RSSI value and monotonic behavior as RSSI weakens;
+- invalid/non-finite RSSI, threshold, and distance handling;
+- `close` / `far` threshold classification;
+- optional Firebase configuration and incomplete-config rejection;
+- RSSI extraction across current and legacy Bleak result shapes;
+- a mocked BLE monitoring cycle that verifies normalized Firebase payload publication;
+- the no-match path, which must not publish data.
 
-CI also compiles the Python sources and runs the suite on Python 3.10, 3.11, and 3.12.
+The bridge tests mock BLE discovery and Firebase objects, so CI requires neither Bluetooth hardware nor Firebase credentials/network access. GitHub Actions compiles the Python sources and runs the suite on Python 3.10, 3.11, and 3.12.
 
 ---
 
@@ -184,6 +187,7 @@ CI also compiles the Python sources and runs the suite on Python 3.10, 3.11, and
 - The Android implementation does not provide hardened long-running background BLE monitoring.
 - Device calibration is environment-specific.
 - Firebase access rules and authentication must be configured appropriately for any real deployment.
+- Public CI validates bridge orchestration with mocks; it does not claim hardware-in-the-loop BLE or live Firebase integration coverage.
 
 ---
 
