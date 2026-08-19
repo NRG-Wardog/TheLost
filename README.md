@@ -1,5 +1,7 @@
 # TheLost
 
+[![Python tests](https://github.com/NRG-Wardog/TheLost/actions/workflows/python-tests.yml/badge.svg)](https://github.com/NRG-Wardog/TheLost/actions/workflows/python-tests.yml)
+
 **BLE Proximity Safety Prototype — Android, Python & Firebase**
 
 TheLost is a hackathon prototype exploring a simple idea: detect when a tracked Bluetooth Low Energy (BLE) device moves beyond a configurable proximity threshold and surface that state to the user.
@@ -9,7 +11,7 @@ The repository contains two proof-of-concept paths built around the same proximi
 - **Android client** — scans for a named BLE / micro:bit device, estimates distance from RSSI, and raises a local notification when the device is too far away.
 - **Python bridge** — scans for a specific BLE address, converts RSSI to an approximate distance, classifies the device as `close` / `far`, and can publish status samples to Firebase Realtime Database.
 
-> **Project status:** Hackathon prototype. The core BLE discovery, RSSI-based proximity logic, Android alert flow, and Firebase publishing path were implemented. The original event ended before the Android and cloud paths were unified into one production-ready application. The repository is preserved as an engineering prototype rather than presented as a finished tracking product.
+> **Project status:** Hackathon prototype. The core BLE discovery, RSSI-based proximity logic, Android alert flow, and Firebase publishing path were implemented. The event ended before the Android and cloud paths were unified into one production-ready application, so the repository is intentionally presented as a tested engineering prototype rather than a finished tracking product.
 
 ---
 
@@ -45,12 +47,12 @@ The repository contains two proof-of-concept paths built around the same proximi
 
 - BLE discovery from both **Android** and **Python**.
 - RSSI-based distance approximation with configurable calibration parameters.
-- Separation of proximity estimation from device / cloud integration so the core logic can be tested independently.
+- Separation of proximity estimation from device/cloud integration so the core logic can be tested independently.
 - Android notification flow for out-of-range events.
 - Firebase Realtime Database integration for publishing proximity state.
 - Environment-driven configuration for BLE target, Firebase settings, threshold, and scan interval.
-- Unit tests for the pure proximity model.
-- Lightweight GitHub Actions validation for the proximity logic.
+- Deterministic unit tests for the pure proximity model.
+- GitHub Actions compatibility checks across Python 3.10, 3.11, and 3.12.
 
 ---
 
@@ -92,9 +94,7 @@ pip install -r requirements.txt
 
 ### Configure
 
-The script no longer depends on a hard-coded BLE address or Firebase project configuration.
-
-Example environment variables:
+Deployment-specific values are supplied through environment variables instead of being embedded in source code.
 
 ```text
 THELOST_TARGET_ADDRESS=C4:A7:D8:EE:A2:39
@@ -117,7 +117,7 @@ Run:
 python talkWithMicro.py
 ```
 
-You can also override common settings from the CLI:
+Common values can also be overridden from the CLI:
 
 ```bash
 python talkWithMicro.py \
@@ -126,7 +126,7 @@ python talkWithMicro.py \
   --interval 2
 ```
 
-If Firebase configuration is omitted, the bridge still performs local BLE scanning and logs proximity results without attempting cloud writes.
+If Firebase configuration is omitted, the bridge remains useful as a local BLE proximity monitor and does not attempt cloud writes.
 
 ---
 
@@ -136,14 +136,13 @@ The Android prototype lives under `app/` and targets a BLE device named `The_Los
 
 Implemented flow:
 
-1. Start the application.
-2. Scan for BLE advertisements.
-3. Match the configured micro:bit device name.
-4. Read RSSI from the scan result.
-5. Estimate proximity.
-6. Raise a notification when the distance crosses the configured threshold.
+1. Scan for BLE advertisements.
+2. Match the target micro:bit device name.
+3. Read RSSI from the scan result.
+4. Estimate proximity.
+5. Raise a local notification when the configured threshold is crossed.
 
-The app was built as part of the hackathon prototype and should be treated as a proof of concept rather than a production background-tracking implementation.
+The Android path is a proof of concept rather than a hardened long-running background tracking service.
 
 ---
 
@@ -151,7 +150,7 @@ The app was built as part of the hackathon prototype and should be treated as a 
 
 BLE RSSI is noisy and is affected by walls, device orientation, radio hardware, interference, and calibration.
 
-The Python path uses the standard log-distance approximation:
+The Python path uses the log-distance approximation:
 
 ```text
 distance = 10 ^ ((measured_power - RSSI) / (10 * path_loss_exponent))
@@ -163,36 +162,28 @@ This is useful for **coarse proximity classification**, not precise physical ran
 
 ## Tests
 
-Run the unit tests for the pure proximity model:
-
 ```bash
 python -m unittest discover -s tests -v
 ```
 
 The tests cover:
 
-- expected distance at the calibrated 1-meter RSSI value
-- monotonic distance behavior as RSSI weakens
-- invalid RSSI handling
-- `close` / `far` threshold classification
+- expected distance at the calibrated 1-meter RSSI value;
+- monotonic distance behavior as RSSI weakens;
+- invalid RSSI handling;
+- `close` / `far` threshold classification.
+
+CI also compiles the Python sources and runs the suite on Python 3.10, 3.11, and 3.12.
 
 ---
 
 ## Known Limitations
 
 - RSSI-based distance is approximate, not centimeter-accurate ranging.
-- The Android and Firebase paths are not currently connected into a single end-to-end mobile/cloud workflow.
-- The Android implementation is a prototype and does not provide hardened long-running background BLE monitoring.
+- The Android and Firebase paths are not currently connected into one end-to-end mobile/cloud workflow.
+- The Android implementation does not provide hardened long-running background BLE monitoring.
 - Device calibration is environment-specific.
 - Firebase access rules and authentication must be configured appropriately for any real deployment.
-
----
-
-## Why Keep This Project Public?
-
-TheLost is not presented as a finished product. It is kept as a record of an earlier engineering prototype covering **BLE, Android, asynchronous Python, cloud integration, and proximity modeling**.
-
-It complements later projects by showing experimentation with hardware-adjacent software and cross-component system design under hackathon constraints.
 
 ---
 
